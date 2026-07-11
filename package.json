@@ -2,8 +2,10 @@
   "name": "cli-playlistdownloader",
   "version": "1.0.0",
   "description": "A simple command-line tool to download playlists from YouTube. ### Features - Download entire YouTube playlists with a single command. - Supports various video formats and quality options. - Easy-to-use command-line interface. ### Installation 1. Clone the repository:    ```bash    git clone 'URL'    ``` 2. Navigate to the project directory:     ```bash     cd cli-playlistdownloader     ``` 3. Install the required dependencies:   - Arch Linux:     ```bash     sudo pacman -S yt-dlp     ```   - Debian/Ubuntu:     ```bash     sudo apt-get install yt-dlp     ```   - macOS (using Homebrew):     ```bash     brew install yt-dlp     ```",
-  "main": "main.js",
+  "main": "electron-main.js",
   "scripts": {
+    "start": "electron .",
+    "cli": "node main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,5 +22,8 @@
   "homepage": "https://github.com/Lumexio/cli-playlistdownloader#readme",
   "dependencies": {
     "cli-progress": "^3.12.0"
+  },
+  "devDependencies": {
+    "electron": "^43.1.0"
   }
 }

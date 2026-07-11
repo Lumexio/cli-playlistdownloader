@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+ <meta charset="UTF-8" />
+ <meta http-equiv="Content-Security-Policy" content="default-src 'self'" />
+ <title>Playlist Downloader</title>
+ <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+ <div class="app">
+  <header>
+   <h1>Playlist Downloader</h1>
+   <p class="subtitle">Download YouTube playlists as MP3</p>
+  </header>
+
+  <main>
+   <div class="input-group">
+    <input id="url-input" type="url" placeholder="Paste YouTube playlist URL…" autocomplete="off" spellcheck="false" />
+    <button id="download-btn">Download</button>
+   </div>
+
+   <section id="progress-section" class="hidden">
+    <div class="meta">
+     <div class="meta-row">
+      <span class="meta-label">Playlist</span>
+      <span id="playlist-name" class="meta-value">—</span>
+     </div>
+     <div class="meta-row">
+      <span class="meta-label">Saved to</span>
+      <span id="output-path" class="meta-value small">—</span>
+     </div>
+    </div>
+
+    <div class="bars">
+     <div class="bar-group">
+      <div class="bar-header">
+       <span class="bar-label">Overall</span>
+       <span id="overall-counter" class="bar-counter">0 / 0</span>
+      </div>
+      <div class="bar-track">
+       <div id="overall-fill" class="bar-fill green"></div>
+      </div>
+     </div>
+
+     <div class="bar-group">
+      <div class="bar-header">
+       <span id="track-name" class="bar-label truncate">Starting…</span>
+       <span id="track-percent" class="bar-counter">0%</span>
+      </div>
+      <div class="bar-track">
+       <div id="track-fill" class="bar-fill purple"></div>
+      </div>
+     </div>
+    </div>
+   </section>
+
+   <div id="status-msg" class="status hidden"></div>
+  </main>
+ </div>
+ <script src="renderer.js"></script>
+</body>
+
+</html>
