@@ -6,6 +6,11 @@
   "scripts": {
     "start": "electron .",
     "cli": "node main.js",
+    "download-ytdlp": "node scripts/download-ytdlp.mjs",
+    "postinstall": "node scripts/download-ytdlp.mjs",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win",
+    "build": "electron-builder --linux --win",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,7 +28,43 @@
   "dependencies": {
     "cli-progress": "^3.12.0"
   },
+  "build": {
+    "appId": "io.github.lumexio.playlist-downloader",
+    "productName": "Playlist Downloader",
+    "files": [
+      "electron-main.js",
+      "core-download.js",
+      "preload.cjs",
+      "renderer/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "AudioVideo"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
   "devDependencies": {
-    "electron": "^43.1.0"
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
   }
 }

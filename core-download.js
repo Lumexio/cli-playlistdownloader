@@ -6,16 +6,6 @@ import os from "os";
 
 const execAsync = promisify(exec);
 
-function DependencyCheck() {
-  try {
-    execSync("yt-dlp --version", { stdio: "ignore" });
-  } catch {
-    throw new Error(
-      "yt-dlp is not installed. Please install yt-dlp to use this feature.",
-    );
-  }
-}
-
 /**
  * Download a playlist as MP3 files, emitting progress events via onEvent.
  *
@@ -27,18 +17,22 @@ function DependencyCheck() {
  *   { type: "complete",    outputPath }
  *   { type: "error",       message }
  */
-export async function DownloadPlaylist(link, onEvent = () => {}) {
+export async function DownloadPlaylist(link, onEvent = () => { }, ytdlpBin = "yt-dlp") {
   try {
-    DependencyCheck();
+    try {
+      execSync(`"${ytdlpBin}" --version`, { stdio: "ignore" });
+    } catch {
+      throw new Error(`yt-dlp not found. Expected at: ${ytdlpBin}`);
+    }
 
     const { stdout: titleOut } = await execAsync(
-      `yt-dlp --flat-playlist --print playlist_title -I 1:1 "${link}"`,
+      `"${ytdlpBin}" --flat-playlist --print playlist_title -I 1:1 "${link}"`,
     );
     const playlistName = titleOut.trim();
     const sanitizedName = playlistName.replace(/[<>:"/\\|?*]/g, "");
 
     const { stdout: idsOut } = await execAsync(
-      `yt-dlp --flat-playlist --print id "${link}"`,
+      `"${ytdlpBin}" --flat-playlist --print id "${link}"`,
     );
     const totalTracks = idsOut.trim().split("\n").filter(Boolean).length;
 
@@ -58,7 +52,7 @@ export async function DownloadPlaylist(link, onEvent = () => {}) {
         `${defaultPath}/%(title)s.%(ext)s`,
         link,
       ];
-      const proc = spawn("yt-dlp", args);
+      const proc = spawn(ytdlpBin, args);
       let stdoutBuf = "";
 
       const handleLine = (line) => {
