@@ -1,0 +1,11 @@
+{
+ "hooks": {
+  "PostToolUse": [
+   {
+    "type": "command",
+    "command": "./cli-playlistdownloader/.github/hooks/scripts/run-tests-on-edit.sh",
+    "timeout": 120
+   }
+  ]
+ }
+}
