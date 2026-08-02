@@ -1,4 +1,6 @@
 ## CLI-PLAYLIST DOWNLOADER
+
+[![AI Ready](https://img.shields.io/badge/AI--Ready-yes-brightgreen?style=flat)](https://github.com/johnpapa/ai-ready)
 A simple command-line tool to download playlists from YouTube.
 ### Features
 - Download entire YouTube playlists with a single command.
@@ -36,3 +38,11 @@ A simple command-line tool to download playlists from YouTube.
   ```
   Enter Playlist URL: <playlist_url>
   ```
+
+## Contributing
+
+Create a focused branch and pull request. Install dependencies with
+`npm ci --ignore-scripts` when the tracked yt-dlp binaries should remain
+unchanged, then run `npm test`. Changes to download events must remain aligned
+across `core-download.js`, the CLI, Electron IPC/preload, renderer, and tests.
+Preserve the security constraints in `AGENTS.md`.

@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose a focused CLI or Electron improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User need
+      description: What problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful outcome.
+    validations:
+      required: true
+  - type: checkboxes
+    id: surfaces
+    attributes:
+      label: Affected surfaces
+      options:
+        - label: Shared download engine
+        - label: CLI
+        - label: Electron main process or IPC
+        - label: Renderer
+        - label: Packaging
+        - label: Backend, auth, or billing contract
+  - type: textarea
+    id: security
+    attributes:
+      label: Security considerations
+      description: Explain input validation, filesystem, subprocess, IPC, auth, or secret-handling impact.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues for a similar request.
+          required: true
