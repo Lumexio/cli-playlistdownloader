@@ -4,7 +4,90 @@ import path from "path";
 import os from "os";
 import cliProgress from "cli-progress";
 
-//Check if yt-dlp is installed
+/**
+ * Strips dangerous characters and path traversal sequences from a playlist or file name.
+ */
+export function sanitizeFilename(name) {
+  if (typeof name !== "string") return "";
+  return name
+    .replace(/\.\.+[/\\]/g, "") // remove path traversal ../ or ..\
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "") // remove illegal filesystem chars
+    .replace(/^[\.\s]+|[\.\s]+$/g, "") // trim leading/trailing dots and whitespace
+    .trim();
+}
+
+/**
+ * Builds a safe argument array for yt-dlp subprocess invocation (preventing shell injection).
+ */
+export function buildCommandArgs({ link, outputDir, audioFormat = "mp3", audioQuality = "best" } = {}) {
+  if (!link || typeof link !== "string") {
+    throw new Error("A valid link string is required to build command arguments");
+  }
+
+  const template = outputDir
+    ? `${outputDir}/%(title)s.%(ext)s`
+    : "%(title)s.%(ext)s";
+
+  return [
+    "-x",
+    "--audio-format",
+    audioFormat,
+    "--audio-quality",
+    audioQuality,
+    "-o",
+    template,
+    link,
+  ];
+}
+
+/**
+ * Parses yt-dlp stdout lines for download progress, speed, ETA, and item status.
+ */
+export function parseProgress(line) {
+  if (typeof line !== "string") return null;
+
+  // Track item counter: "[download] Downloading item 3 of 10"
+  const itemMatch = line.match(/\[download\]\s+Downloading item\s+(\d+)\s+of\s+(\d+)/i);
+  if (itemMatch) {
+    return {
+      type: "item",
+      current: parseInt(itemMatch[1], 10),
+      total: parseInt(itemMatch[2], 10),
+    };
+  }
+
+  // Per-track download percentage with optional speed and ETA
+  // e.g. "[download]  45.3% of ~10.50MiB at  2.50MiB/s ETA 00:05"
+  const pctMatch = line.match(/\[download\]\s+([\d.]+)%(?:\s+of\s+[~\d.]+\w+)?(?:\s+at\s+([\d.]+\w+\/s))?(?:\s+ETA\s+([\d:]+))?/i);
+  if (pctMatch) {
+    return {
+      type: "percent",
+      percent: parseFloat(pctMatch[1]),
+      speed: pctMatch[2] || null,
+      eta: pctMatch[3] || null,
+    };
+  }
+
+  // Capture track title from destination line: "[download] Destination: /path/to/song.mp3"
+  const destMatch = line.match(/\[download\]\s+Destination:\s+.+[/\\](.+)$/i);
+  if (destMatch) {
+    return {
+      type: "destination",
+      filename: destMatch[1].trim(),
+    };
+  }
+
+  // Already downloaded tracks
+  if (line.includes("has already been downloaded")) {
+    return {
+      type: "already_downloaded",
+    };
+  }
+
+  return null;
+}
+
+// Check if yt-dlp is installed
 function DependencyCheck() {
   try {
     execSync("yt-dlp --version", { stdio: "ignore" });
@@ -22,7 +105,7 @@ export function DownloadPlaylist(link) {
   // 1. Get playlist title
   const getTitleCmd = `yt-dlp --flat-playlist --print playlist_title -I 1:1 "${link}"`;
   const playlistName = execSync(getTitleCmd).toString().trim();
-  const sanitizedName = playlistName.replace(/[<>:"/\\|?*]/g, "");
+  const sanitizedName = sanitizeFilename(playlistName);
 
   // 2. Get total track count
   const ids = execSync(`yt-dlp --flat-playlist --print id "${link}"`)
@@ -58,48 +141,28 @@ export function DownloadPlaylist(link) {
   const trackBar = multibar.create(100, 0, { label: "Starting..." });
 
   // 5. Spawn yt-dlp and parse real-time output
-  const args = [
-    "-x",
-    "--audio-format",
-    "mp3",
-    "-o",
-    `${defaultPath}/%(title)s.%(ext)s`,
-    link,
-  ];
+  const args = buildCommandArgs({ link, outputDir: defaultPath });
   const proc = spawn("yt-dlp", args);
 
   let currentTrackNum = 0;
 
   const handleLine = (line) => {
-    // Track item counter: "[download] Downloading item 3 of 10"
-    const itemMatch = line.match(/\[download\] Downloading item (\d+) of \d+/);
-    if (itemMatch) {
-      currentTrackNum = parseInt(itemMatch[1], 10);
+    const progress = parseProgress(line);
+    if (!progress) return;
+
+    if (progress.type === "item") {
+      currentTrackNum = progress.current;
       overallBar.update(currentTrackNum - 1);
       trackBar.update(0, { label: `Track ${currentTrackNum}/${totalTracks}` });
-      return;
-    }
-
-    // Per-track download percentage: "[download]  45.3% of ..."
-    const pctMatch = line.match(/\[download\]\s+([\d.]+)%/);
-    if (pctMatch) {
-      trackBar.update(Math.floor(parseFloat(pctMatch[1])));
-      return;
-    }
-
-    // Capture track title from destination line
-    const destMatch = line.match(/\[download\] Destination: .+[/\\](.+)$/);
-    if (destMatch) {
+    } else if (progress.type === "percent") {
+      trackBar.update(Math.floor(progress.percent));
+    } else if (progress.type === "destination") {
       const shortName =
-        destMatch[1].length > 40
-          ? destMatch[1].slice(0, 37) + "..."
-          : destMatch[1];
+        progress.filename.length > 40
+          ? progress.filename.slice(0, 37) + "..."
+          : progress.filename;
       trackBar.update(0, { label: shortName });
-      return;
-    }
-
-    // Already downloaded tracks still count as complete
-    if (line.includes("has already been downloaded")) {
+    } else if (progress.type === "already_downloaded") {
       trackBar.update(100);
       overallBar.update(currentTrackNum);
     }
